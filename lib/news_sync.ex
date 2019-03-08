@@ -14,9 +14,13 @@ defmodule NewsSync do
   def handle_info(:fetch_top_posts, state) do
     IO.puts("----------------- About to fetch some posts ---------------------")
 
-    response = HTTPoison.get!("https://hacker-news.firebaseio.com/v0/topstories.json")
-    top_twenty = response.body |> Poison.decode!() |> Enum.take(3)
-    Enum.map(top_twenty, &fetch_story/1)
+    case HnFetch.get_top_stories() do
+      {:ok, top_stories} ->
+        top_stories |> Enum.take(3) |> Enum.map(&fetch_story/1)
+
+      {:error, msg} ->
+        IO.puts(msg)
+    end
 
     schedule_work()
 
@@ -30,18 +34,12 @@ defmodule NewsSync do
 
   defp fetch_story(story_id) do
     spawn(fn ->
-      response =
-        story_id
-        |> (&"https://hacker-news.firebaseio.com/v0/item/#{&1}.json").()
-        |> HTTPoison.get!()
-
-      with %{status_code: 200, body: body} <- response,
-           {:ok, decoded_body} <- Poison.decode(body),
-           {:ok, url} <- Map.fetch(decoded_body, "url") do
+      with {:ok, body} <- HnFetch.get_story_data(story_id),
+           {:ok, url} <- Map.fetch(body, "url") do
         IO.puts("##{story_id}: #{url}")
       else
-        _ ->
-          IO.puts("Failed to fetch anything for #{story_id}")
+        {:error, msg} ->
+          IO.puts(msg)
       end
     end)
   end
