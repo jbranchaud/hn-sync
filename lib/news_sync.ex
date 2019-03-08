@@ -6,7 +6,7 @@ defmodule NewsSync do
   end
 
   def init(state) do
-    schedule_work()
+    send(self(), :fetch_top_posts)
 
     {:ok, state}
   end
