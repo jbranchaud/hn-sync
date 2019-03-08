@@ -16,7 +16,8 @@ defmodule NewsSync do
 
     response = HTTPoison.get!("https://hacker-news.firebaseio.com/v0/topstories.json")
 
-    IO.puts(response.body)
+    top_twenty =
+      response.body |> Poison.decode!() |> Enum.take(20) |> Poison.encode!() |> IO.puts()
 
     schedule_work()
 
