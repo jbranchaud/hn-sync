@@ -12,7 +12,11 @@ defmodule NewsSync do
   end
 
   def handle_info(:fetch_top_posts, state) do
-    IO.puts("You are receiving a message for :fetch_top_posts")
+    IO.puts("----------------- About to fetch some posts ---------------------")
+
+    response = HTTPoison.get!("https://hacker-news.firebaseio.com/v0/topstories.json")
+
+    IO.puts(response.body)
 
     schedule_work()
 
